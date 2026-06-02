@@ -11,18 +11,18 @@ import streamlit as st
 # Replace the placeholder teams with the real teams.
 # ------------------------------------------------------------
 GROUPS: Dict[str, List[str]] = {
-    "Group A": ["South Korea", "South Africa", "Mexico", "Czechia"],
-    "Group B": ["Team B1", "Team B2", "Team B3", "Team B4"],
-    "Group C": ["Team C1", "Team C2", "Team C3", "Team C4"],
-    "Group D": ["Team D1", "Team D2", "Team D3", "Team D4"],
-    "Group E": ["Team E1", "Team E2", "Team E3", "Team E4"],
-    "Group F": ["Team F1", "Team F2", "Team F3", "Team F4"],
-    "Group G": ["Team G1", "Team G2", "Team G3", "Team G4"],
-    "Group H": ["Team H1", "Team H2", "Team H3", "Team H4"],
-    "Group I": ["Team I1", "Team I2", "Team I3", "Team I4"],
-    "Group J": ["Team J1", "Team J2", "Team J3", "Team J4"],
-    "Group K": ["Team K1", "Team K2", "Team K3", "Team K4"],
-    "Group L": ["Team L1", "Team L2", "Team L3", "Team L4"],
+    "Group A": ["Mexico", "South Africa", "South Korea", "Czechia"],
+    "Group B": ["Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland"],
+    "Group C": ["Brazil", "Morocco", "Haiti", "Scotland"],
+    "Group D": ["United States", "Paraguay", "Australia", "Türkiye"],
+    "Group E": ["Germany", "Curacao", "Ivory Coast", "Ecuador"],
+    "Group F": ["Netherlands", "Japan", "Sweden", "Tunisia"],
+    "Group G": ["Belgium", "Egypt", "Iran", "New Zealand"],
+    "Group H": ["Spain", "Cape Verde", "Saudi Arabia", "Uruguay"],
+    "Group I": ["France", "Senegal", "Iraq", "Norway"],
+    "Group J": ["Argentina", "Algeria", "Austria", "Jordan"],
+    "Group K": ["Portugal", "Congo DR", "Uzbekistan", "Colombia"],
+    "Group L": ["England", "Croatia", "Ghana", "Panama"],
 }
 
 DB_PATH = "worldcup_game.db"
@@ -160,7 +160,15 @@ def load_results() -> Dict[str, List[str]]:
 # 3) GAME LOGIC
 # ------------------------------------------------------------
 def score_group(prediction: List[str], official_result: List[str]) -> int:
-    return sum(1 for predicted_team, real_team in zip(prediction, official_result) if predicted_team == real_team)
+    correct_positions = sum(
+        1
+        for predicted_team, real_team in zip(prediction, official_result)
+        if predicted_team == real_team
+    )
+
+    bonus = 1 if correct_positions == 4 else 0
+
+    return correct_positions + bonus
 
 
 def calculate_leaderboard() -> pd.DataFrame:
@@ -205,7 +213,7 @@ def calculate_leaderboard() -> pd.DataFrame:
             {
                 "Player": player_name,
                 "Score": total_score,
-                "Max Score": groups_scored * 4,
+                "Max Score": groups_scored * 5,
                 "Groups Scored": groups_scored,
             }
         )
@@ -309,7 +317,11 @@ def submit_prediction_page():
 
     player_name = st.text_input("Your name", placeholder="Example: Kaan")
 
-    st.info("Choose the order you think each group will finish. You get 1 point for every exact position you guess correctly.")
+    st.info(
+    "Choose the order you think each group will finish. "
+    "You get 1 point for every exact position you guess correctly. "
+    "A perfect group gives 4 points + 1 bonus point."
+    )
 
     rankings = {}
     all_valid = True
@@ -403,7 +415,11 @@ def main():
     init_db()
 
     st.title("⚽ World Cup Ranking Guessing Game")
-    st.write("Guess the exact final ranking of each group. Correct team + correct position = 1 point.")
+    st.write(
+    "Guess the exact final ranking of each group. "
+    "Correct team + correct position = 1 point. "
+    "If you get all 4 teams in a group exactly right, you get 1 bonus point."
+    )
 
     tab1, tab2, tab3 = st.tabs(["Submit Prediction", "Leaderboard", "Admin"])
 
