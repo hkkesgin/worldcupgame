@@ -153,6 +153,26 @@ def delete_player_predictions(player_name: str):
     )
     conn.commit()
     conn.close()
+def delete_all_official_results():
+    conn = get_connection()
+    conn.execute("DELETE FROM official_results")
+    conn.commit()
+    conn.close()
+
+
+def delete_all_predictions():
+    conn = get_connection()
+    conn.execute("DELETE FROM predictions")
+    conn.commit()
+    conn.close()
+
+
+def reset_entire_game():
+    conn = get_connection()
+    conn.execute("DELETE FROM official_results")
+    conn.execute("DELETE FROM predictions")
+    conn.commit()
+    conn.close()
 
 
 def load_results() -> Dict[str, List[str]]:
@@ -389,6 +409,24 @@ def admin_page():
     if new_status != submissions_open:
         set_setting("submissions_open", "yes" if new_status else "no")
         st.success("Submission status updated.")
+
+    st.subheader("Reset test data")
+    st.warning("Use these buttons carefully. Deleted data cannot be recovered.")
+
+    if st.button("Clear official results only", key="clear_results_button"):
+        delete_all_official_results()
+        st.success("Official results were cleared. Leaderboard scores are now reset.")
+        st.rerun()
+
+    if st.button("Clear all predictions only", key="clear_predictions_button"):
+        delete_all_predictions()
+        st.success("All player predictions were cleared.")
+        st.rerun()
+
+    if st.button("Reset entire game", key="reset_entire_game_button"):
+        reset_entire_game()
+        st.success("The entire game was reset.")
+        st.rerun()
 
     st.subheader("Enter official group results")
     st.caption("You can save results one group at a time.")
