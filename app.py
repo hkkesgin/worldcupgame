@@ -145,6 +145,15 @@ def load_predictions() -> pd.DataFrame:
     conn.close()
     return df
 
+def delete_player_predictions(player_name: str):
+    conn = get_connection()
+    conn.execute(
+        "DELETE FROM predictions WHERE player_name = ?",
+        (player_name,),
+    )
+    conn.commit()
+    conn.close()
+
 
 def load_results() -> Dict[str, List[str]]:
     conn = get_connection()
@@ -277,7 +286,7 @@ def admin_password_ok() -> bool:
         password = None
 
     if not password:
-        password = os.environ.get("ADMIN_PASSWORD", "change-me")
+        password = os.environ.get("ADMIN_PASSWORD", "kajulatte")
 
     entered = st.text_input("Admin password", type="password")
     return entered == password
@@ -366,6 +375,33 @@ def leaderboard_page():
 
 
 def admin_page():
+        st.subheader("Delete a player's predictions")
+
+    predictions_df = load_predictions()
+
+    if predictions_df.empty:
+        st.info("There are no predictions to delete.")
+    else:
+        players = sorted(predictions_df["player_name"].unique())
+
+        player_to_delete = st.selectbox(
+            "Choose player to delete",
+            players,
+            key="delete_player_select",
+        )
+
+        confirm_name = st.text_input(
+            f"Type '{player_to_delete}' to confirm deletion",
+            key="delete_player_confirm",
+        )
+
+        if st.button("Delete this player's predictions", key="delete_player_button"):
+            if confirm_name == player_to_delete:
+                delete_player_predictions(player_to_delete)
+                st.success(f"{player_to_delete}'s predictions were deleted.")
+                st.rerun()
+            else:
+                st.error("Confirmation name does not match.")
     st.header("Admin")
 
     if not admin_password_ok():
