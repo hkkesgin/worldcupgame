@@ -375,7 +375,36 @@ def leaderboard_page():
 
 
 def admin_page():
-        st.subheader("Delete a player's predictions")
+    st.header("Admin")
+
+    if not admin_password_ok():
+        st.warning("Enter the admin password to manage the game.")
+        return
+
+    st.success("Admin mode unlocked.")
+
+    submissions_open = get_setting("submissions_open", "yes") == "yes"
+    new_status = st.toggle("Allow friends to submit predictions", value=submissions_open)
+
+    if new_status != submissions_open:
+        set_setting("submissions_open", "yes" if new_status else "no")
+        st.success("Submission status updated.")
+
+    st.subheader("Enter official group results")
+    st.caption("You can save results one group at a time.")
+
+    for group_name, teams in GROUPS.items():
+        with st.expander(group_name, expanded=(group_name == "Group A")):
+            valid, ranking = ranking_input(group_name, teams, f"official_{group_name}")
+
+            if st.button(f"Save {group_name} result", key=f"save_{group_name}"):
+                if not valid:
+                    st.error(f"Please complete all 4 positions for {group_name}.")
+                else:
+                    save_official_results({group_name: ranking})
+                    st.success(f"{group_name} official result saved!")
+
+    st.subheader("Delete a player's predictions")
 
     predictions_df = load_predictions()
 
@@ -402,44 +431,11 @@ def admin_page():
                 st.rerun()
             else:
                 st.error("Confirmation name does not match.")
-    st.header("Admin")
-
-    if not admin_password_ok():
-        st.warning("Enter the admin password to manage the game.")
-        return
-
-    st.success("Admin mode unlocked.")
-
-    submissions_open = get_setting("submissions_open", "yes") == "yes"
-    new_status = st.toggle("Allow friends to submit predictions", value=submissions_open)
-
-    if new_status != submissions_open:
-        set_setting("submissions_open", "yes" if new_status else "no")
-        st.success("Submission status updated.")
-
-    st.subheader("Enter official group results")
-    st.caption("You can enter results group by group after the matches finish.")
-
-    results = {}
-    all_valid = True
-
-    for group_name, teams in GROUPS.items():
-        with st.expander(group_name, expanded=False):
-            valid, ranking = ranking_input(group_name, teams, "official")
-            if valid:
-                results[group_name] = ranking
-            else:
-                all_valid = False
-
-    if st.button("Save official results", type="primary"):
-        if not results:
-            st.error("Please enter at least one complete group result.")
-        else:
-            save_official_results(results)
-            st.success("Official results saved. The leaderboard has been updated.")
 
     st.subheader("All predictions")
+
     predictions_df = load_predictions()
+
     if predictions_df.empty:
         st.info("No predictions submitted yet.")
     else:
